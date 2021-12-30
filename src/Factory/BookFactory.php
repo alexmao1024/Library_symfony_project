@@ -9,7 +9,7 @@ use App\Entity\Book;
 class BookFactory
 {
 
-    public function create(string $author,string $bookName,string $press,float $price,int $quantity,string $status = 'normal'):Book
+    public function create(string $author,string $bookName,string $press,float $price,int $quantity = 1):Book
     {
         $book = new Book();
         $book->setAuthor($author);
@@ -17,7 +17,6 @@ class BookFactory
         $book->setPress($press);
         $book->setPrice($price);
         $book->setQuantity($quantity);
-        $book->setStatus($status);
         return $book;
     }
 }

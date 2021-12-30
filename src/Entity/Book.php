@@ -6,6 +6,7 @@ use App\Repository\BookRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=BookRepository::class)
@@ -21,33 +22,34 @@ class Book
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"show_book"})
      */
     private $bookName;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"show_book"})
      */
     private $author;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"show_book"})
      */
     private $press;
 
     /**
      * @ORM\Column(type="integer")
+     * @Groups({"show_book"})
      */
     private $quantity;
 
     /**
      * @ORM\Column(type="float")
+     * @Groups({"show_book"})
      */
     private $price;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $status;
 
     /**
      * @ORM\OneToMany(targetEntity=Borrow::class, mappedBy="book", orphanRemoval=true)
@@ -120,18 +122,6 @@ class Book
     public function setPrice(float $price): self
     {
         $this->price = $price;
-
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(string $status): self
-    {
-        $this->status = $status;
 
         return $this;
     }

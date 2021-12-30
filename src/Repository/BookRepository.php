@@ -22,10 +22,10 @@ class BookRepository extends ServiceEntityRepository
      /**
       * @return Book[] Returns an array of Book objects
       */
-    public function findFilterStatus(string $value)
+    public function findFilterQuantity(int $value): array
     {
         return $this->createQueryBuilder('b')
-            ->andWhere('b.status = :value')
+            ->andWhere('b.quantity >= :value')
             ->setParameter('value', $value)
             ->orderBy('b.id', 'ASC')
             ->setMaxResults(10)
@@ -34,15 +34,15 @@ class BookRepository extends ServiceEntityRepository
         ;
     }
 
-    /*
-    public function findOneBySomeField($value): ?Book
+
+    public function findAllBy(string $value): Book
     {
         return $this->createQueryBuilder('b')
-            ->andWhere('b.exampleField = :val')
-            ->setParameter('val', $value)
+            ->andWhere('b.bookName = :value')
+            ->setParameter('value', $value)
             ->getQuery()
-            ->getOneOrNullResult()
+            ->getResult()
         ;
     }
-    */
+
 }

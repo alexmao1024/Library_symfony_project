@@ -18,18 +18,29 @@ class APITest extends WebTestCase
         $this->assertResponseIsSuccessful();
     }
 
-    public function testBookShow(): void
-    {
-        $client = static::createClient();
-        $client->request('Post', '/showBook');
+     public function testBorrow(): void
+     {
+         $client = static::createClient();
+         $client->request('Post', '/borrow',
+             [
+                 'bookName'=>'三体1',
+                 'borrowAt'=>'2021-12-30'
+             ]);
+         $request = $client->getRequest();
+         $requestArray = $request->toArray();
 
-        $this->assertResponseIsSuccessful();
-    }
+         $response = $client->getResponse();
+
+
+         $this->assertResponseIsSuccessful();
+         $this->assertSame( '2021-12-30', $requestArray['borrowAt']);
+
+     }
 
     public function testCreateBook(): void
     {
         $client = static::createClient();
-        $client->request('Post', '/create',
+        $client->request('Post', '/createBook',
             [
                 'author'=>'alex',
                 'bookName'=>'alexMercer',
