@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AdminUser;
 use App\Entity\Book;
 use App\Entity\Borrow;
 use DateTime;
@@ -30,22 +31,49 @@ class ReturnBookController extends AbstractController
                 'No borrowing record found for id'.$id
             );
         }
+        if ($borrow->getReturnAt())
+        {
+            throw $this->createAccessDeniedException(
+                'The book has already returned.'
+            );
+        }
 
         $bookId = $borrow->getBook()->getId();
         $book = $entityManager->getRepository(Book::class)->find($bookId);
+        $admin = $entityManager->getRepository(AdminUser::class)->find(1);
+        $spend = 0;
 
         if ($returnAt)
         {
-            $borrow->setReturnAt(DateTime::createFromFormat('Y-m-d', $returnAt));
+            $returnAtDate = DateTime::createFromFormat('Y-m-d', $returnAt);
+            $borrow->setReturnAt($returnAtDate);
             $borrow->setStatus('Returned');
             $book->setQuantity($book->getQuantity()+1);
+            $interval = (int)$returnAtDate->diff($borrow->getBorrowAt())->format('%a');
+            if ($interval<0)
+            {
+                throw $this->createAccessDeniedException(
+                    'Return time is fault!'
+                );
+            }
+            elseif ($interval<=14)
+            {
+                $borrow->setSpend(0);
+            }
+            else
+            {
+                $spend = $interval - 14;
+                $borrow->setSpend($spend);
+                $admin->setBalance($admin->getBalance()+$spend);
+            }
         }
 
         $entityManager->flush();
 
         return $this->json(
             [
-                'message'=>'Returned Successfully!'
+                'message'=>'Returned Successfully!',
+                'balance'=>$admin->getBalance()+$spend
             ]
         );
     }
