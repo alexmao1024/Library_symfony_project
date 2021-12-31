@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+
 use App\Factory\BookFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,11 +30,13 @@ class CreateBookController extends AbstractController
                 'Passed an empty argument'
             );
         }
+
         $book = $bookFactory->create($author,$bookName,$press,$price,$quantity);
 
         $entityManager->persist($book);
 
         $entityManager->flush();
+
         return $this->json([
             'message'=>'Successfully,Book with id '.$book->getId(),
             'id:'=>$book->getId()

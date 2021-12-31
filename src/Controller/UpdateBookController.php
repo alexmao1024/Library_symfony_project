@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+
 use App\Entity\Book;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,11 +54,8 @@ class UpdateBookController extends AbstractController
             $book->setQuantity($quantity);
         }
 
-
-
         $entityManager->flush();
 
         return $this->json(['message'=>'Successfully'],200);
     }
-
 }

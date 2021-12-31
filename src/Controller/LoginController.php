@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+
 class LoginController extends AbstractController
 {
     /**
@@ -15,6 +16,7 @@ class LoginController extends AbstractController
      */
     public function login(Request $request,AdminUserRepository $adminUserRepository): Response
     {
+
         $requestArray = $request->toArray();
         $email = $requestArray['email'];
         $password = $requestArray['password'];
@@ -25,10 +27,13 @@ class LoginController extends AbstractController
                 'Login in failed'
             );
         }
-        return $this->json(['id'=>$adminUser->getId(),
-            'username'=>$adminUser->getUsername(),
-            'balance'=>$adminUser->getBalance()
-        ]);
+
+        return $this->json(
+            [
+                'id'=>$adminUser->getId(),
+                'username'=>$adminUser->getUsername(),
+            ]
+        );
     }
 
 }

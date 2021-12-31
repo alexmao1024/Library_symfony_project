@@ -10,7 +10,7 @@ use DateTimeInterface;
 
 class BorrowFactory
 {
-    public function create(string $bookName,DateTimeInterface $borrowAt, Book $book,string $status = 'borrowed'): Borrow
+    public function create(string $bookName, DateTimeInterface $borrowAt, Book $book, string $status = 'borrowed'): Borrow
     {
         $borrow = new Borrow();
         $borrow->setBookName($bookName);
@@ -19,4 +19,5 @@ class BorrowFactory
         $borrow->setStatus($status);
         return $borrow;
     }
+
 }

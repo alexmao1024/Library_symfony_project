@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
+
 use App\Repository\BookRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -18,15 +18,14 @@ class ShowBookController extends AbstractController
         $response = new Response();
         $books = $bookRepository->findAll();
 
-        if (!$books){
+        if (!$books) {
             throw $this->createNotFoundException(
                 'There are no books at the moment'
             );
         }
 
         $resultArray = array();
-        foreach ($books as $key => $book)
-        {
+        foreach ($books as $key => $book) {
             $resultArray[$key]['id'] = $book->getId();
             $resultArray[$key]['bookName'] = $book->getBookName();
             $resultArray[$key]['author'] = $book->getAuthor();

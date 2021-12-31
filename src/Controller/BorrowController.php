@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+
 use App\Entity\Book;
 use App\Factory\BorrowFactory;
 use DateTime;
@@ -23,31 +24,29 @@ class BorrowController extends AbstractController
         $borrowAt = DateTime::createFromFormat('Y-m-d', $requestArray['borrowAt']);
 
 
-        $book = $entityManager->getRepository(Book::class)->findOneBy(['bookName'=>$bookName]);
-        if (!$book)
-        {
+        $book = $entityManager->getRepository(Book::class)->findOneBy(['bookName' => $bookName]);
+        if (!$book) {
             throw $this->createNotFoundException(
-                'No book found : '.$bookName
+                'No book found : ' . $bookName
             );
         }
-        if ($book->getQuantity()-1 < 0)
-        {
+        if ($book->getQuantity() - 1 < 0) {
             throw $this->createAccessDeniedException(
                 'No book would be borrowed.'
             );
         }
-        $book->setQuantity($book->getQuantity()-1);
+        $book->setQuantity($book->getQuantity() - 1);
 
         $borrow = $borrowFactory->create($book->getBookName(), $borrowAt, $book);
 
         $entityManager->persist($borrow);
-        $entityManager->persist($book);
 
         $entityManager->flush();
 
         return $this->json([
-            'message'=>'Successfully,Book with id '.$book->getId(),
-            'id:'=>$borrow->getId()
-        ]);
+                'message' => 'Successfully,Book with id ' . $book->getId(),
+                'id:' => $borrow->getId()
+            ]
+        );
     }
 }

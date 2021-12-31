@@ -41,8 +41,6 @@ class ReturnBookController extends AbstractController
             $book->setQuantity($book->getQuantity()+1);
         }
 
-        $entityManager->persist($book);
-        $entityManager->persist($borrow);
         $entityManager->flush();
 
         return $this->json(
