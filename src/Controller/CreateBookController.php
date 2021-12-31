@@ -39,7 +39,7 @@ class CreateBookController extends AbstractController
 
         return $this->json([
             'message'=>'Successfully,Book with id '.$book->getId(),
-            'id:'=>$book->getId()
+            'id'=>$book->getId()
         ],200);
     }
 }

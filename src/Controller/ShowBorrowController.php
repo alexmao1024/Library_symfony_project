@@ -33,6 +33,7 @@ class ShowBorrowController extends AbstractController
             $borrow->getReturnAt() ?
                 $resultArray[$key]['returnAt'] = $borrow->getReturnAt()->format('Y-m-d')
                :$resultArray[$key]['returnAt'] = $borrow->getReturnAt();
+            $resultArray[$key]['spend'] = $borrow->getSpend();
         }
 
         return $response->setContent(json_encode($resultArray));
