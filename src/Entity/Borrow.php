@@ -49,7 +49,7 @@ class Borrow
     private $spend;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="string", length=255)
      */
     private $ISBN;
 
@@ -130,12 +130,12 @@ class Borrow
         return $this;
     }
 
-    public function getISBN(): ?int
+    public function getISBN(): ?string
     {
         return $this->ISBN;
     }
 
-    public function setISBN(int $ISBN): self
+    public function setISBN(string $ISBN): self
     {
         $this->ISBN = $ISBN;
 

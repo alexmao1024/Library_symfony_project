@@ -19,9 +19,7 @@ class ShowBookController extends AbstractController
         $books = $bookRepository->findAll();
 
         if (!$books) {
-            throw $this->createNotFoundException(
-                'There are no books at the moment'
-            );
+            return $this->json([]);
         }
 
         $resultArray = array();

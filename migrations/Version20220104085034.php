@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20211231022823 extends AbstractMigration
+final class Version20220104085034 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -20,12 +20,12 @@ final class Version20211231022823 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE borrow ADD spend DOUBLE PRECISION DEFAULT NULL');
+        $this->addSql('CREATE UNIQUE INDEX uniq_ISBN ON book (isbn)');
     }
 
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE borrow DROP spend');
+        $this->addSql('DROP INDEX uniq_ISBN ON book');
     }
 }

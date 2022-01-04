@@ -18,9 +18,7 @@ class ShowBorrowController extends AbstractController
         $borrows = $borrowRepository->findAll();
 
         if (!$borrows){
-            throw $this->createNotFoundException(
-                'There are no records at the moment'
-            );
+            return $this->json([]);
         }
 
         $resultArray = array();
