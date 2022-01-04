@@ -27,6 +27,7 @@ class ShowBorrowController extends AbstractController
         foreach ($borrows as $key => $borrow)
         {
             $resultArray[$key]['id'] = $borrow->getId();
+            $resultArray[$key]['ISBN'] = $borrow->getISBN();
             $resultArray[$key]['bookName'] = $borrow->getBookName();
             $resultArray[$key]['status'] = $borrow->getStatus();
             $resultArray[$key]['borrowAt'] = $borrow->getBorrowAt()->format('Y-m-d');

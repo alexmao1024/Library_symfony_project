@@ -11,23 +11,23 @@ use Symfony\Component\Routing\Annotation\Route;
 class RemoveBookController extends AbstractController
 {
     /**
-     * @Route("/removeBook/{id}", name="remove_book", methods={"DELETE"})
+     * @Route("/removeBook/{ISBN}", name="remove_book", methods={"DELETE"})
      */
-    public function removeBook(EntityManagerInterface $entityManager,int $id): Response
+    public function removeBook(EntityManagerInterface $entityManager,int $ISBN): Response
     {
 
-        $book = $entityManager->getRepository(Book::class)->find($id);
+        $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN' => $ISBN]);
         if (!$book)
         {
             throw $this->createNotFoundException(
-                'No book found for id'.$id
+                'No book found for: '.$ISBN
             );
         }
         $entityManager->remove($book);
 
         $entityManager->flush();
 
-        return $this->json(['message'=>'Successfully'],200);
+        return $this->json([],200);
 
     }
 }

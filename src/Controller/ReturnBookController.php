@@ -21,7 +21,6 @@ class ReturnBookController extends AbstractController
     {
         $requestArray = $request->toArray();
         $id = $requestArray['id'];
-        $returnAt = $requestArray['returnAt'];
 
         $borrow = $entityManager->getRepository(Borrow::class)->find($id);
 
@@ -43,36 +42,35 @@ class ReturnBookController extends AbstractController
         $admin = $entityManager->getRepository(AdminUser::class)->find(1);
         $spend = 0;
 
-        if ($returnAt)
+
+        $returnAt = date('Y-m-d');
+        $returnAtDate = DateTime::createFromFormat('Y-m-d', $returnAt);
+        $borrow->setReturnAt($returnAtDate);
+        $borrow->setStatus('Returned');
+        $book->setQuantity($book->getQuantity()+1);
+        $interval = (int)$returnAtDate->diff($borrow->getBorrowAt())->format('%a');
+        if ($interval<0)
         {
-            $returnAtDate = DateTime::createFromFormat('Y-m-d', $returnAt);
-            $borrow->setReturnAt($returnAtDate);
-            $borrow->setStatus('Returned');
-            $book->setQuantity($book->getQuantity()+1);
-            $interval = (int)$returnAtDate->diff($borrow->getBorrowAt())->format('%a');
-            if ($interval<0)
-            {
-                throw $this->createAccessDeniedException(
-                    'Return time is fault!'
-                );
-            }
-            elseif ($interval<=14)
-            {
-                $borrow->setSpend(0);
-            }
-            else
-            {
-                $spend = $interval - 14;
-                $borrow->setSpend($spend);
-                $admin->setBalance($admin->getBalance()+$spend);
-            }
+            throw $this->createAccessDeniedException(
+                'Return time is fault!'
+            );
         }
+        elseif ($interval<=14)
+        {
+            $borrow->setSpend(0);
+        }
+        else
+        {
+            $spend = $interval - 14;
+            $borrow->setSpend($spend);
+            $admin->setBalance($admin->getBalance()+$spend);
+        }
+
 
         $entityManager->flush();
 
         return $this->json(
             [
-                'message'=>'Returned Successfully!',
                 'balance'=>$admin->getBalance()+$spend
             ]
         );

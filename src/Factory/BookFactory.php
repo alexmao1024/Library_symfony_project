@@ -9,9 +9,10 @@ use App\Entity\Book;
 class BookFactory
 {
 
-    public function create(string $author,string $bookName,string $press,float $price,int $quantity = 1):Book
+    public function create(int $ISBN,string $author,string $bookName,string $press,float $price,int $quantity = 1):Book
     {
         $book = new Book();
+        $book->setISBN($ISBN);
         $book->setAuthor($author);
         $book->setBookName($bookName);
         $book->setPress($press);

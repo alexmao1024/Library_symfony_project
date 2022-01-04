@@ -48,6 +48,11 @@ class Borrow
      */
     private $spend;
 
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $ISBN;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -121,6 +126,18 @@ class Borrow
     public function setSpend(?float $spend): self
     {
         $this->spend = $spend;
+
+        return $this;
+    }
+
+    public function getISBN(): ?int
+    {
+        return $this->ISBN;
+    }
+
+    public function setISBN(int $ISBN): self
+    {
+        $this->ISBN = $ISBN;
 
         return $this;
     }

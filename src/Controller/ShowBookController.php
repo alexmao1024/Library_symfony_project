@@ -27,6 +27,7 @@ class ShowBookController extends AbstractController
         $resultArray = array();
         foreach ($books as $key => $book) {
             $resultArray[$key]['id'] = $book->getId();
+            $resultArray[$key]['ISBN'] = $book->getISBN();
             $resultArray[$key]['bookName'] = $book->getBookName();
             $resultArray[$key]['author'] = $book->getAuthor();
             $resultArray[$key]['press'] = $book->getPress();

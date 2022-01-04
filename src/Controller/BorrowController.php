@@ -20,14 +20,14 @@ class BorrowController extends AbstractController
     public function borrow(Request $request, EntityManagerInterface $entityManager, BorrowFactory $borrowFactory): Response
     {
         $requestArray = $request->toArray();
-        $bookName = $requestArray['bookName'];
-        $borrowAt = DateTime::createFromFormat('Y-m-d', $requestArray['borrowAt']);
+        $ISBN = $requestArray['ISBN'];
+        $borrowAt = DateTime::createFromFormat('Y-m-d', date('Y-m-d'));
 
 
-        $book = $entityManager->getRepository(Book::class)->findOneBy(['bookName' => $bookName]);
+        $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN' => $ISBN]);
         if (!$book) {
             throw $this->createNotFoundException(
-                'No book found : ' . $bookName
+                'No book found : ' . $ISBN
             );
         }
         if ($book->getQuantity() - 1 < 0) {
@@ -37,14 +37,13 @@ class BorrowController extends AbstractController
         }
         $book->setQuantity($book->getQuantity() - 1);
 
-        $borrow = $borrowFactory->create($book->getBookName(), $borrowAt, $book);
+        $borrow = $borrowFactory->create($book->getISBN(),$book->getBookName(), $borrowAt, $book);
 
         $entityManager->persist($borrow);
 
         $entityManager->flush();
 
         return $this->json([
-                'message' => 'Successfully,Borrow with id ' . $book->getId(),
                 'id:' => $borrow->getId()
             ]
         );

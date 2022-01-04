@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+
 /**
  * @ORM\Entity(repositoryClass=BookRepository::class)
  */
@@ -49,6 +50,11 @@ class Book
      * @ORM\OneToMany(targetEntity=Borrow::class, mappedBy="book", orphanRemoval=true)
      */
     private $borrow;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $ISBN;
 
     public function __construct()
     {
@@ -146,6 +152,18 @@ class Book
                 $borrow->setBook(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getISBN(): ?int
+    {
+        return $this->ISBN;
+    }
+
+    public function setISBN(int $ISBN): self
+    {
+        $this->ISBN = $ISBN;
 
         return $this;
     }

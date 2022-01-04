@@ -4,6 +4,7 @@ namespace App\Controller;
 
 
 use App\Entity\Book;
+use App\Entity\Borrow;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,24 +19,27 @@ class UpdateBookController extends AbstractController
     public function updateBook(Request $request,EntityManagerInterface $entityManager): Response
     {
         $requestArray = $request->toArray();
-        $id = $requestArray['id'];
+        $ISBN = $requestArray['ISBN'];
         $author = $requestArray['author'];
         $bookName = $requestArray['bookName'];
         $press = $requestArray['press'];
         $price = $requestArray['price'];
         $quantity = $requestArray['quantity'];
 
-        $book = $entityManager->getRepository(Book::class)->find($id);
+        $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN'=>$ISBN]);
         if (!$book)
         {
             throw $this->createNotFoundException(
-                'No book found for id'.$id
+                'No book found for: '.$ISBN
             );
         }
+
+        $borrow = $entityManager->getRepository(Borrow::class)->findOneBy(['book' => $book]);
 
         if ($bookName)
         {
             $book->setBookName($bookName);
+            $borrow?->setBookName($bookName);
         }
         if ($author)
         {
@@ -56,6 +60,6 @@ class UpdateBookController extends AbstractController
 
         $entityManager->flush();
 
-        return $this->json(['message'=>'Successfully'],200);
+        return $this->json([],200);
     }
 }
