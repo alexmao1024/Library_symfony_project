@@ -32,6 +32,7 @@ class LoginController extends AbstractController
             [
                 'id'=>$adminUser->getId(),
                 'username'=>$adminUser->getUsername(),
+                'balance'=>$adminUser->getBalance()
             ]
         );
     }

@@ -71,6 +71,7 @@ class ReturnBookController extends AbstractController
 
         return $this->json(
             [
+                'spend'=>$spend,
                 'balance'=>$admin->getBalance()+$spend
             ]
         );

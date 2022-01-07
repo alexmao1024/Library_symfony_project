@@ -44,7 +44,10 @@ class BorrowController extends AbstractController
         $entityManager->flush();
 
         return $this->json([
-                'id:' => $borrow->getId()
+                'id' => $borrow->getId(),
+                'bookName' => $borrow->getBookName(),
+                'borrowAt' => $borrow->getBorrowAt()->format('Y-m-d'),
+                'status' => $borrow->getStatus()
             ]
         );
     }
