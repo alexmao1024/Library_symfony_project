@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\AdminUser;
 use App\Entity\Book;
 use App\Entity\Borrow;
+use App\Factory\BookFactory;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,7 +18,7 @@ class ReturnBookController extends AbstractController
     /**
      * @Route("/returnBook", name="return", methods={"POST"})
      */
-    public function returnBook(Request $request,EntityManagerInterface $entityManager): Response
+    public function returnBook(Request $request,EntityManagerInterface $entityManager,BookFactory $bookFactory): Response
     {
         $requestArray = $request->toArray();
         $id = $requestArray['id'];
@@ -37,8 +38,13 @@ class ReturnBookController extends AbstractController
             );
         }
 
-        $bookId = $borrow->getBook()->getId();
-        $book = $entityManager->getRepository(Book::class)->find($bookId);
+        $bookISBN = $borrow->getISBN();
+        $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN'=>$bookISBN]);
+        if (!$book)
+        {
+            $book = $bookFactory->create($bookISBN,'author',$borrow->getBookName(),'press',0,0);
+        }
+
         $admin = $entityManager->getRepository(AdminUser::class)->find(1);
         $spend = 0;
 
@@ -66,6 +72,7 @@ class ReturnBookController extends AbstractController
             $admin->setBalance($admin->getBalance()+$spend);
         }
 
+        $entityManager->persist($book);
 
         $entityManager->flush();
 

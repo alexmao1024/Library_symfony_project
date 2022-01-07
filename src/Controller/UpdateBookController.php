@@ -34,12 +34,15 @@ class UpdateBookController extends AbstractController
             );
         }
 
-        $borrow = $entityManager->getRepository(Borrow::class)->findOneBy(['book' => $book]);
+        $borrows = $entityManager->getRepository(Borrow::class)->findBy(['ISBN' => $ISBN]);
 
         if ($bookName)
         {
             $book->setBookName($bookName);
-            $borrow?->setBookName($bookName);
+            foreach ( $borrows as $borrow)
+            {
+                $borrow?->setBookName($bookName);
+            }
         }
         if ($author)
         {

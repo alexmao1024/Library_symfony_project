@@ -37,11 +37,6 @@ class Borrow
      */
     private $returnAt;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=Book::class, inversedBy="borrow")
-     * @ORM\JoinColumn(nullable=false)
-     */
-    private $book;
 
     /**
      * @ORM\Column(type="float", nullable=true)
@@ -106,17 +101,6 @@ class Borrow
         return $this;
     }
 
-    public function getBook(): ?Book
-    {
-        return $this->book;
-    }
-
-    public function setBook(?Book $book): self
-    {
-        $this->book = $book;
-
-        return $this;
-    }
 
     public function getSpend(): ?float
     {

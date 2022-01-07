@@ -13,7 +13,7 @@ class RemoveBookController extends AbstractController
     /**
      * @Route("/removeBook/{ISBN}", name="remove_book", methods={"DELETE"})
      */
-    public function removeBook(EntityManagerInterface $entityManager,int $ISBN): Response
+    public function removeBook(EntityManagerInterface $entityManager,string $ISBN): Response
     {
 
         $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN' => $ISBN]);
@@ -23,6 +23,7 @@ class RemoveBookController extends AbstractController
                 'No book found for: '.$ISBN
             );
         }
+
         $entityManager->remove($book);
 
         $entityManager->flush();

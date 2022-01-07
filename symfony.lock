@@ -334,6 +334,9 @@
             "ref": "fadbfe33303a76e25cb63401050439aa9b1a9c7f"
         }
     },
+    "symfony/password-hasher": {
+        "version": "v5.4.2"
+    },
     "symfony/phpunit-bridge": {
         "version": "6.0",
         "recipe": {
@@ -391,6 +394,24 @@
     },
     "symfony/runtime": {
         "version": "v5.4.1"
+    },
+    "symfony/security-bundle": {
+        "version": "5.4",
+        "recipe": {
+            "version": "5.3"
+        }
+    },
+    "symfony/security-core": {
+        "version": "v5.4.2"
+    },
+    "symfony/security-csrf": {
+        "version": "v5.4.0"
+    },
+    "symfony/security-guard": {
+        "version": "v5.4.0"
+    },
+    "symfony/security-http": {
+        "version": "v5.4.2"
     },
     "symfony/serializer": {
         "version": "v5.4.0"

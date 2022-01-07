@@ -37,7 +37,7 @@ class BorrowController extends AbstractController
         }
         $book->setQuantity($book->getQuantity() - 1);
 
-        $borrow = $borrowFactory->create($book->getISBN(),$book->getBookName(), $borrowAt, $book);
+        $borrow = $borrowFactory->create($book->getISBN(),$book->getBookName(), $borrowAt);
 
         $entityManager->persist($borrow);
 
