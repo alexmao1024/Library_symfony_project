@@ -58,4 +58,26 @@ class SubscribeController extends AbstractController
 
         return $this->json([],200);
     }
+
+    /**
+     * @Route("/removeSubscribe/{id}", name="remove_subscribe", methods={"DELETE"})
+     */
+    public function removeBook(EntityManagerInterface $entityManager,string $id): Response
+    {
+
+        $subscribe = $entityManager->getRepository(Subscribe::class)->find($id);
+        if (!$subscribe)
+        {
+            throw $this->createNotFoundException(
+                'No found for: '.$id
+            );
+        }
+
+        $entityManager->remove($subscribe);
+
+        $entityManager->flush();
+
+        return $this->json([],200);
+
+    }
 }

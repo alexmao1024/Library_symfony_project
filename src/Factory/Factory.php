@@ -59,12 +59,13 @@ class Factory
         return $normalUser;
     }
 
-    public function createSubscribe(Book $book, DateTimeInterface $subscribeAt, NormalUser $normalUser): Subscribe
+    public function createSubscribe(Book $book, DateTimeInterface $subscribeAt, NormalUser $normalUser, string $status = 'noSent'): Subscribe
     {
         $subscribe = new Subscribe();
         $subscribe->setBook($book);
         $subscribe->setSubscribeAt($subscribeAt);
         $subscribe->setNormalUser($normalUser);
+        $subscribe->setStatus($status);
         return $subscribe;
     }
 

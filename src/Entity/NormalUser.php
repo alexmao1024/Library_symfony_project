@@ -35,7 +35,7 @@ class NormalUser
     private $password;
 
     /**
-     * @ORM\OneToOne(targetEntity=Subscribe::class, mappedBy="normalUser", cascade={"persist", "remove"})
+     * @ORM\OneToOne(targetEntity=Subscribe::class, mappedBy="normalUser")
      */
     private $subscribe;
 

@@ -6,6 +6,7 @@ namespace App\Controller;
 use App\Entity\AdminUser;
 use App\Entity\Book;
 use App\Entity\Borrow;
+use App\Entity\Message;
 use App\Entity\NormalUser;
 use App\Entity\Subscribe;
 use App\Factory\Factory;
@@ -45,6 +46,27 @@ class BorrowController extends AbstractController
                 'No book would be borrowed.'
             );
         }
+
+        $subBook = null;
+        if ($normalUser->getSubscribe())
+        {
+            $subBook = $normalUser->getSubscribe()->getBook();
+        }
+        //如果该书预定记录数大于等于已有数量且不是预定者则不能外接
+        $bookSubCount = count($book->getSubscribes(), 0);
+        if ($bookSubCount >= $book->getQuantity() && !($subBook == $book))
+        {
+            throw $this->createAccessDeniedException(
+                'The book has been subscribed!'
+            );
+        }
+        elseif ($subBook == $book)
+        {           //如果借的书就是该用户自己预定的书，则删除预定记录和消息通知
+            $entityManager->remove($normalUser->getSubscribe());
+            $subContent = $entityManager->getRepository(Message::class)->findOneBy(['normalUser' => $normalUser, 'content' => 'The book that you subscribed has returned!']);
+            $entityManager->remove($subContent);
+        }
+
         $book->setQuantity($book->getQuantity() - 1);
 
         $borrow = $factory->createBorrow($book->getISBN(),$book->getBookName(),$borrowAt,$normalUser);
@@ -135,7 +157,7 @@ class BorrowController extends AbstractController
         {
             for ($i=0;$i<count($subscribes,0);$i++)
             {
-                if ($subscribes[$i]->getStatus() === 'noSent')
+                if ($subscribes[$i]->getStatus() == 'noSent')
                 {
                     $normalUser = $subscribes[$i]->getNormalUser();
                     $message = $factory->createMessage($normalUser, 'The book that you subscribed has returned!');
