@@ -48,6 +48,12 @@ class Borrow
      */
     private $ISBN;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=NormalUser::class, inversedBy="borrows")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $borrower;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -122,6 +128,18 @@ class Borrow
     public function setISBN(string $ISBN): self
     {
         $this->ISBN = $ISBN;
+
+        return $this;
+    }
+
+    public function getBorrower(): ?NormalUser
+    {
+        return $this->borrower;
+    }
+
+    public function setBorrower(?NormalUser $borrower): self
+    {
+        $this->borrower = $borrower;
 
         return $this;
     }

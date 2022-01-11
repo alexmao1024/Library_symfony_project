@@ -4,7 +4,7 @@ namespace App\Tests\IntegrationTest;
 
 use App\Entity\AdminUser;
 use App\Entity\Book;
-use App\Factory\AdminUserFactory;
+use App\Factory\Factory;
 use App\Factory\BookFactory;
 use App\Repository\AdminUserRepository;
 use App\Repository\BookRepository;
@@ -65,8 +65,8 @@ class EntityManagerTest extends KernelTestCase
     public function testAdminEntityManager(): void
     {
 
-        $adminFactory = static::getContainer()->get(AdminUserFactory::class);
-        $this->assertInstanceOf(AdminUserFactory::class,$adminFactory);
+        $adminFactory = static::getContainer()->get(Factory::class);
+        $this->assertInstanceOf(Factory::class,$adminFactory);
         $adminUser = $adminFactory->create('66485@qq.com','alexalex','alexmao',1000);
 
         $this->entityManager->persist($adminUser);

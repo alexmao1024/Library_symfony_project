@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\BookRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 
@@ -48,6 +50,16 @@ class Book
      * @ORM\Column(type="string", length=255)
      */
     private $ISBN;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Subscribe::class, mappedBy="book", orphanRemoval=true)
+     */
+    private $subscribes;
+
+    public function __construct()
+    {
+        $this->subscribes = new ArrayCollection();
+    }
 
 
     public function getId(): ?int
@@ -124,6 +136,36 @@ class Book
     public function setISBN(string $ISBN): self
     {
         $this->ISBN = $ISBN;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Subscribe[]
+     */
+    public function getSubscribes(): Collection
+    {
+        return $this->subscribes;
+    }
+
+    public function addSubscribe(Subscribe $subscribe): self
+    {
+        if (!$this->subscribes->contains($subscribe)) {
+            $this->subscribes[] = $subscribe;
+            $subscribe->setBook($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSubscribe(Subscribe $subscribe): self
+    {
+        if ($this->subscribes->removeElement($subscribe)) {
+            // set the owning side to null (unless already changed)
+            if ($subscribe->getBook() === $this) {
+                $subscribe->setBook(null);
+            }
+        }
 
         return $this;
     }

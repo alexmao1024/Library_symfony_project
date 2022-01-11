@@ -2,27 +2,27 @@
 
 namespace App\DataFixtures;
 
-use App\Factory\AdminUserFactory;
+use App\Factory\Factory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 
 class AdminUserFixtures extends Fixture
 {
     /**
-     * @var AdminUserFactory
+     * @var Factory
      */
-    private $adminUserFactory;
+    private $factory;
 
-    public function __construct(AdminUserFactory $adminUserFactory)
+    public function __construct(Factory $factory)
     {
 
-        $this->adminUserFactory = $adminUserFactory;
+        $this->factory = $factory;
     }
 
     public function load(ObjectManager $manager): void
     {
 
-        $adminUser = $this->adminUserFactory->create('694854836@qq.com','alex','alexmao');
+        $adminUser = $this->factory->createAdmin('694854836@qq.com','alex','alexmao');
         $manager->persist($adminUser);
 
         $manager->flush();

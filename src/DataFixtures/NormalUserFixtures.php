@@ -6,9 +6,8 @@ use App\Factory\Factory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 
-class BookFixtures extends Fixture
+class NormalUserFixtures extends Fixture
 {
-
     /**
      * @var Factory
      */
@@ -22,12 +21,12 @@ class BookFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-
-        for($i=0;$i<5;$i++)
+        for ($i=0;$i<6;$i++)
         {
-            $book = $this->factory->createBook(rand(100000,500000).'','刘慈欣', '三体' . $i, '科幻世界', 100.0 + $i, $i);
-
-            $manager->persist($book);
+            $email = chr(rand(97,122)).rand(10001,99999).'@'.rand(101,199).'.com';
+            $username = chr(rand(65,90)).chr(rand(97,122)).chr(rand(97,122));
+            $normalUser = $this->factory->createNormalUser($email, $username, '' . rand(10001, 99999));
+            $manager->persist($normalUser);
         }
 
         $manager->flush();
