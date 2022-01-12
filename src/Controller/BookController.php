@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Entity\Book;
 use App\Entity\Borrow;
+use App\Entity\NormalUser;
 use App\Factory\Factory;
 use App\Repository\BookRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -56,9 +57,7 @@ class BookController extends AbstractController
 
         if (!$ISBN||!$author||!$bookName||!$press||!$price||!$quantity)
         {
-            throw $this->createNotFoundException(
-                'Passed an empty argument'
-            );
+            throw new \Exception('Passed an empty argument.',400);
         }
 
         $book = $factory->createBook($ISBN,$author,$bookName,$press,$price,$quantity);
@@ -145,5 +144,50 @@ class BookController extends AbstractController
         $entityManager->flush();
 
         return $this->json([],200);
+    }
+
+    /**
+     * @Route("/userShowBook", name="user_show_book", methods={"GET"})
+     */
+    public function userShowBook(Request $request,EntityManagerInterface $entityManager): Response
+    {
+        $requestArray = $request->toArray();
+        $userId = $requestArray['id'];
+
+        $user = $entityManager->getRepository(NormalUser::class)->find($userId);
+        if (!$user) {
+            throw $this->createAccessDeniedException(
+                'Access Denied.'
+            );
+        }
+
+        $response = new Response();
+        $books = $entityManager->getRepository(Book::class)->findAll();
+
+        if (!$books) {
+            return $this->json([]);
+        }
+
+        $resultArray = array();
+        foreach ($books as $key => $book) {
+            $resultArray[$key]['id'] = $book->getId();
+            $resultArray[$key]['ISBN'] = $book->getISBN();
+            $resultArray[$key]['bookName'] = $book->getBookName();
+            $resultArray[$key]['author'] = $book->getAuthor();
+            $resultArray[$key]['press'] = $book->getPress();
+            $resultArray[$key]['price'] = $book->getPrice();
+            $resultArray[$key]['quantity'] = $book->getQuantity();
+            $resultArray[$key]['status'] = null;
+            if ($user->getSubscribe()->getBook() == $book)
+            {
+                $resultArray[$key]['status'] = '已预订';
+            }
+            elseif ($book->getQuantity() == 0)
+            {
+                $resultArray[$key]['status'] = '可预定';
+            }
+        }
+
+        return $response->setContent(json_encode($resultArray));
     }
 }

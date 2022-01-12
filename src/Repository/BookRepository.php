@@ -19,20 +19,21 @@ class BookRepository extends ServiceEntityRepository
         parent::__construct($registry, Book::class);
     }
 
-     /**
-      * @return Book[] Returns an array of Book objects
-      */
-    public function findFilterQuantity(int $value): array
-    {
-        return $this->createQueryBuilder('b')
-            ->andWhere('b.quantity >= :value')
-            ->setParameter('value', $value)
-            ->orderBy('b.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
+//     /**
+//      * @return Book[] Returns an array of Book objects
+//      */
+//    public function findFilterQuantity(int $value): array
+//    {
+//        $entityManager = $this->getEntityManager();
+//
+//        $query = $entityManager->createQuery(
+//            'SELECT book
+//                 FROM APP\Entity\Book book,APP\Entity\Subscribe subscribe
+//                 WHERE book = subscribe.book AND
+//                 '
+//        )->setParameter();
+//        return
+//    }
 
 
     public function findAllBy(string $value): Book

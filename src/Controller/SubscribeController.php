@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+date_default_timezone_set('Asia/Shanghai');
 
 class SubscribeController extends AbstractController
 {
@@ -23,7 +24,7 @@ class SubscribeController extends AbstractController
         $requestArray = $request->toArray();
         $ISBN = $requestArray['ISBN'];
         $userId = $requestArray['id'];
-        $subscribeAt = DateTime::createFromFormat('Y-m-d', date('Y-m-d'));
+        $subscribeAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
 
         $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN' => $ISBN]);
 
@@ -59,25 +60,4 @@ class SubscribeController extends AbstractController
         return $this->json([],200);
     }
 
-    /**
-     * @Route("/removeSubscribe/{id}", name="remove_subscribe", methods={"DELETE"})
-     */
-    public function removeBook(EntityManagerInterface $entityManager,string $id): Response
-    {
-
-        $subscribe = $entityManager->getRepository(Subscribe::class)->find($id);
-        if (!$subscribe)
-        {
-            throw $this->createNotFoundException(
-                'No found for: '.$id
-            );
-        }
-
-        $entityManager->remove($subscribe);
-
-        $entityManager->flush();
-
-        return $this->json([],200);
-
-    }
 }

@@ -17,6 +17,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+date_default_timezone_set('Asia/Shanghai');
 
 class BorrowController extends AbstractController
 {
@@ -29,7 +30,7 @@ class BorrowController extends AbstractController
         $ISBN = $requestArray['ISBN'];
         //用户id
         $normalUserId = $requestArray['id'];
-        $borrowAt = DateTime::createFromFormat('Y-m-d', date('Y-m-d'));
+        $borrowAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
 
         //查询用户实体管理器
         $normalUser = $entityManager->getRepository(NormalUser::class)->find($normalUserId);
@@ -78,7 +79,7 @@ class BorrowController extends AbstractController
         return $this->json([
                 'id' => $borrow->getId(),
                 'bookName' => $borrow->getBookName(),
-                'borrowAt' => $borrow->getBorrowAt()->format('Y-m-d'),
+                'borrowAt' => $borrow->getBorrowAt()->format('Y-m-d H:i:s'),
                 'status' => $borrow->getStatus(),
                 'borrower' => $normalUser->getUsername()
             ]
@@ -126,8 +127,8 @@ class BorrowController extends AbstractController
         $subscribes = $entityManager->getRepository(Subscribe::class)->findBy(['book' => $book],['subscribeAt'=>'ASC']);
 
         //获取当前时间作为还书时间
-        $returnAt = date('Y-m-d');
-        $returnAtDate = DateTime::createFromFormat('Y-m-d', $returnAt);
+        $returnAt = date('Y-m-d H:i:s');
+        $returnAtDate = DateTime::createFromFormat('Y-m-d H:i:s', $returnAt);
 
         //插入还书需要的所有信息
         $borrow->setReturnAt($returnAtDate);
@@ -160,8 +161,10 @@ class BorrowController extends AbstractController
                 if ($subscribes[$i]->getStatus() == 'noSent')
                 {
                     $normalUser = $subscribes[$i]->getNormalUser();
-                    $message = $factory->createMessage($normalUser, 'The book that you subscribed has returned!');
+                    $message = $factory->createMessage($normalUser, 'The book 《'.$subscribes[$i]->getBook()->getBookName().'》 that you subscribed has returned! Note:If you do not borrow the book within two days, the subscribe records will expire.');
                     $subscribes[$i]->setStatus('sent');
+                    $sentAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
+                    $subscribes[$i]->setSentAt($sentAt);
                     $entityManager->persist($message);
                     break;
                 }
@@ -198,9 +201,9 @@ class BorrowController extends AbstractController
             $resultArray[$key]['ISBN'] = $borrow->getISBN();
             $resultArray[$key]['bookName'] = $borrow->getBookName();
             $resultArray[$key]['status'] = $borrow->getStatus();
-            $resultArray[$key]['borrowAt'] = $borrow->getBorrowAt()->format('Y-m-d');
+            $resultArray[$key]['borrowAt'] = $borrow->getBorrowAt()->format('Y-m-d H:i:s');
             $borrow->getReturnAt() ?
-                $resultArray[$key]['returnAt'] = $borrow->getReturnAt()->format('Y-m-d')
+                $resultArray[$key]['returnAt'] = $borrow->getReturnAt()->format('Y-m-d H:i:s')
                 :$resultArray[$key]['returnAt'] = $borrow->getReturnAt();
             $resultArray[$key]['spend'] = $borrow->getSpend();
             $resultArray[$key]['borrower'] = $borrow->getBorrower()->getUsername();

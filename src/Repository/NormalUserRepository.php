@@ -19,22 +19,19 @@ class NormalUserRepository extends ServiceEntityRepository
         parent::__construct($registry, NormalUser::class);
     }
 
-    // /**
-    //  * @return NormalUserFixtures[] Returns an array of NormalUserFixtures objects
-    //  */
-    /*
-    public function findByExampleField($value)
+     /**
+      * @return NormalUser Returns an array of NormalUser objects
+      */
+    public function findRepeat($value)
     {
         return $this->createQueryBuilder('n')
-            ->andWhere('n.exampleField = :val')
+            ->andWhere('n.email = :val')
             ->setParameter('val', $value)
-            ->orderBy('n.id', 'ASC')
-            ->setMaxResults(10)
             ->getQuery()
             ->getResult()
         ;
     }
-    */
+
 
     /*
     public function findOneBySomeField($value): ?NormalUserFixtures

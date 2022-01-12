@@ -39,6 +39,11 @@ class Subscribe
      */
     private $status;
 
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $sentAt;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -88,6 +93,18 @@ class Subscribe
     public function setStatus(string $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getSentAt(): ?\DateTimeInterface
+    {
+        return $this->sentAt;
+    }
+
+    public function setSentAt(?\DateTimeInterface $sentAt): self
+    {
+        $this->sentAt = $sentAt;
 
         return $this;
     }
