@@ -46,9 +46,22 @@ class SubscribeController extends AbstractController
 
         if ($subscribeExit)
         {
-            throw $this->createAccessDeniedException(
-                'Can\'t subscribe.'
-            );
+            if ($subscribeExit->getBook() != $book)
+            {
+                throw $this->createAccessDeniedException(
+                    'Can\'t subscribe.'
+                );
+            }
+            if ($subscribeExit->getBook() == $book)
+            {
+                $entityManager->remove($subscribeExit);
+                if ($subscribeExit->getNormalUser()->getMessages()[0])
+                {
+                    $entityManager->remove($subscribeExit->getNormalUser()->getMessages()[0]);
+                }
+                $entityManager->flush();
+                return $this->json(['delete'=>'success'],200);
+            }
         }
 
         $subscribe = $factory->createSubscribe($book, $subscribeAt, $user);
@@ -57,7 +70,7 @@ class SubscribeController extends AbstractController
 
         $entityManager->flush();
 
-        return $this->json([],200);
+        return $this->json(['add'=>'success'],200);
     }
 
 }

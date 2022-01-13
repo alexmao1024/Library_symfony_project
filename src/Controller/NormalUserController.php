@@ -132,13 +132,11 @@ class NormalUserController extends AbstractController
     }
 
     /**
-     * @Route("/showOwnRecords", name="show_own_records", methods={"GET"})
+     * @Route("/showOwnRecords/{userId}", name="show_own_records", methods={"GET"})
      */
-    public function showOwnRecords(Request $request,EntityManagerInterface $entityManager): Response
+    public function showOwnRecords(int $userId,EntityManagerInterface $entityManager): Response
     {
         $response = new Response();
-        $requestArray = $request->toArray();
-        $userId = $requestArray['id'];
         $user = $entityManager->getRepository(NormalUser::class)->find($userId);
         if (!$user) {
             throw $this->createAccessDeniedException(

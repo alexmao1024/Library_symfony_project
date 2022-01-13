@@ -8,6 +8,7 @@ use App\Entity\Borrow;
 use App\Entity\NormalUser;
 use App\Factory\Factory;
 use App\Repository\BookRepository;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -96,7 +97,7 @@ class BookController extends AbstractController
     /**
      * @Route("/updateBook", name="update_book", methods={"POST"})
      */
-    public function updateBook(Request $request,EntityManagerInterface $entityManager): Response
+    public function updateBook(Request $request,EntityManagerInterface $entityManager,Factory $factory): Response
     {
         $requestArray = $request->toArray();
         $ISBN = $requestArray['ISBN'];
@@ -138,6 +139,27 @@ class BookController extends AbstractController
         }
         if ($quantity)
         {
+            if ($book->getQuantity()==0 && $book->getSubscribes())
+            {
+                $count = 0;
+                for ($i=0;$i<count($book->getSubscribes(),0);$i++)
+                {
+                    if ($book->getSubscribes()[$i]->getStatus() == 'noSent')
+                    {
+                        $normalUser = $book->getSubscribes()[$i]->getNormalUser();
+                        $message = $factory->createMessage($normalUser, '《'.$book->getSubscribes()[$i]->getBook()->getBookName().'》');
+                        $book->getSubscribes()[$i]->setStatus('sent');
+                        $sentAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
+                        $book->getSubscribes()[$i]->setSentAt($sentAt);
+                        $entityManager->persist($message);
+                        $count ++;
+                    }
+                    if ($count >= $quantity)
+                    {
+                        break;
+                    }
+                }
+            }
             $book->setQuantity($quantity);
         }
 
@@ -147,12 +169,10 @@ class BookController extends AbstractController
     }
 
     /**
-     * @Route("/userShowBook", name="user_show_book", methods={"GET"})
+     * @Route("/userShowBook/{userId}", name="user_show_book", methods={"GET"})
      */
-    public function userShowBook(Request $request,EntityManagerInterface $entityManager): Response
+    public function userShowBook(EntityManagerInterface $entityManager,int $userId): Response
     {
-        $requestArray = $request->toArray();
-        $userId = $requestArray['id'];
 
         $user = $entityManager->getRepository(NormalUser::class)->find($userId);
         if (!$user) {
@@ -178,13 +198,30 @@ class BookController extends AbstractController
             $resultArray[$key]['price'] = $book->getPrice();
             $resultArray[$key]['quantity'] = $book->getQuantity();
             $resultArray[$key]['status'] = null;
-            if ($user->getSubscribe()->getBook() == $book)
+
+            if (($user->getSubscribe() ? $user->getSubscribe()->getBook() : null) == $book )
             {
                 $resultArray[$key]['status'] = '已预订';
             }
             elseif ($book->getQuantity() == 0)
             {
-                $resultArray[$key]['status'] = '可预定';
+                $borrows = $entityManager->getRepository(Borrow::class)->findBy(['borrower' => $user]);
+                if ($borrows)
+                {
+                    foreach ( $borrows as $borrow )
+                    {
+                        if ($borrow->getISBN() == $book->getISBN())
+                        {
+                            $resultArray[$key]['status'] = '已借阅';
+                            break;
+                        }
+                        else
+                        {
+                            $resultArray[$key]['status'] = '可预订';
+                        }
+                    }
+                }
+
             }
         }
 

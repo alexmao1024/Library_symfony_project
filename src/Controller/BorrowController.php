@@ -64,7 +64,7 @@ class BorrowController extends AbstractController
         elseif ($subBook == $book)
         {           //如果借的书就是该用户自己预定的书，则删除预定记录和消息通知
             $entityManager->remove($normalUser->getSubscribe());
-            $subContent = $entityManager->getRepository(Message::class)->findOneBy(['normalUser' => $normalUser, 'content' => 'The book that you subscribed has returned!']);
+            $subContent = $entityManager->getRepository(Message::class)->findOneBy(['normalUser' => $normalUser]);
             $entityManager->remove($subContent);
         }
 
@@ -161,7 +161,7 @@ class BorrowController extends AbstractController
                 if ($subscribes[$i]->getStatus() == 'noSent')
                 {
                     $normalUser = $subscribes[$i]->getNormalUser();
-                    $message = $factory->createMessage($normalUser, 'The book 《'.$subscribes[$i]->getBook()->getBookName().'》 that you subscribed has returned! Note:If you do not borrow the book within two days, the subscribe records will expire.');
+                    $message = $factory->createMessage($normalUser, '《'.$subscribes[$i]->getBook()->getBookName().'》');
                     $subscribes[$i]->setStatus('sent');
                     $sentAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
                     $subscribes[$i]->setSentAt($sentAt);

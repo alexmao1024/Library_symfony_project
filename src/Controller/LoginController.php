@@ -59,7 +59,7 @@ class LoginController extends AbstractController
             [
                 'id'=>$normalUser->getId(),
                 'username'=>$normalUser->getUsername(),
-                'message'=>$normalUser->getMessages()[0]->getContent()
+                'message'=>$message = $normalUser->getMessages()[0] ? $normalUser->getMessages()[0]->getContent() : null
             ]
         );
     }
