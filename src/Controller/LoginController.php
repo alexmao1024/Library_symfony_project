@@ -24,14 +24,12 @@ class LoginController extends AbstractController
 
         $adminUser = $adminUserRepository->findOneBy(['email' => $email, 'password' => $password]);
         if (!$adminUser){
-            throw $this->createAccessDeniedException(
-                'Login in failed'
-            );
+            throw new \Exception('Login in failed',403);
         }
 
         return $this->json(
             [
-                'id'=>$adminUser->getId(),
+                'adminId'=>$adminUser->getId(),
                 'username'=>$adminUser->getUsername(),
                 'balance'=>$adminUser->getBalance()
             ]
@@ -50,16 +48,13 @@ class LoginController extends AbstractController
 
         $normalUser = $normalUserRepository->findOneBy(['email' => $email, 'password' => $password]);
         if (!$normalUser){
-            throw $this->createAccessDeniedException(
-                'Login in failed'
-            );
+            throw new \Exception('Login in failed',403);
         }
 
         return $this->json(
             [
-                'id'=>$normalUser->getId(),
-                'username'=>$normalUser->getUsername(),
-                'message'=>$message = $normalUser->getMessages()[0] ? $normalUser->getMessages()[0]->getContent() : null
+                'userId'=>$normalUser->getId(),
+                'username'=>$normalUser->getUsername()
             ]
         );
     }

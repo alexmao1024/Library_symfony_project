@@ -12,10 +12,11 @@ class NormalUserFixtures extends Fixture
      * @var Factory
      */
     private $factory;
+    private $faker;
 
     public function __construct(Factory $factory)
     {
-
+        $this->faker = \Faker\Factory::create();
         $this->factory = $factory;
     }
 
@@ -23,9 +24,11 @@ class NormalUserFixtures extends Fixture
     {
         for ($i=0;$i<6;$i++)
         {
-            $email = chr(rand(97,122)).rand(10001,99999).'@'.rand(101,199).'.com';
-            $username = chr(rand(65,90)).chr(rand(97,122)).chr(rand(97,122));
-            $normalUser = $this->factory->createNormalUser($email, $username, '' . rand(10001, 99999));
+            $normalUser = $this->factory->createNormalUser(
+                $this->faker->email(),
+                $this->faker->userName(),
+                $this->faker->password(6,10)
+            );
             $manager->persist($normalUser);
         }
 

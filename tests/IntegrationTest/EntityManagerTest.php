@@ -5,7 +5,6 @@ namespace App\Tests\IntegrationTest;
 use App\Entity\AdminUser;
 use App\Entity\Book;
 use App\Factory\Factory;
-use App\Factory\BookFactory;
 use App\Repository\AdminUserRepository;
 use App\Repository\BookRepository;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -29,13 +28,13 @@ class EntityManagerTest extends KernelTestCase
     public function testBookEntityManager(): void
     {
 
-        $bookFactory = static::getContainer()->get(BookFactory::class);
-        $this->assertInstanceOf(BookFactory::class,$bookFactory);
-        $book1 = $bookFactory->create('刘慈欣','三体1','科幻世界',101.0,5);
-        $book2 = $bookFactory->create('刘慈欣','三体2','科幻世界',105.0,5);
-        $book3 = $bookFactory->create('刘慈欣','三体3','世科幻界',150.0,5);
-        $book4 = $bookFactory->create('刘慈欣','三体4','科幻世界',120.0,5);
-        $book5 = $bookFactory->create('刘慈欣','三体5','科幻世界',100.0,5);
+        $bookFactory = static::getContainer()->get(Factory::class);
+        $this->assertInstanceOf(Factory::class,$bookFactory);
+        $book1 = $bookFactory->createBook('刘慈欣','三体1','科幻世界',101.0,5);
+        $book2 = $bookFactory->createBook('刘慈欣','三体2','科幻世界',105.0,5);
+        $book3 = $bookFactory->createBook('刘慈欣','三体3','世科幻界',150.0,5);
+        $book4 = $bookFactory->createBook('刘慈欣','三体4','科幻世界',120.0,5);
+        $book5 = $bookFactory->createBook('刘慈欣','三体5','科幻世界',100.0,5);
 
         $this->entityManager->persist($book1);
         $this->entityManager->persist($book2);

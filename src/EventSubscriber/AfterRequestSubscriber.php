@@ -33,10 +33,18 @@ class AfterRequestSubscriber implements EventSubscriberInterface
     {
         $response = new Response();
         $exception = $event->getThrowable();
-        if ( $this->env !== 'dev' )
+        if ( $this->env == 'dev' )
         {
             $response->setContent($exception->getMessage());
-            $response->setStatusCode($exception->getCode());
+            if ($exception->getCode() == 1062)
+            {
+                $response->setStatusCode(500);
+            }
+            else
+            {
+                $response->setStatusCode($exception->getCode());
+            }
+
             $event->setResponse($response);
         }
     }

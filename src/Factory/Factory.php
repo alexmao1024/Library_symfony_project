@@ -7,7 +7,6 @@ namespace App\Factory;
 use App\Entity\AdminUser;
 use App\Entity\Book;
 use App\Entity\Borrow;
-use App\Entity\Message;
 use App\Entity\NormalUser;
 use App\Entity\Subscribe;
 use DateTimeInterface;
@@ -59,21 +58,15 @@ class Factory
         return $normalUser;
     }
 
-    public function createSubscribe(Book $book, DateTimeInterface $subscribeAt, NormalUser $normalUser, string $status = 'noSent'): Subscribe
+    public function createSubscribe(Book $book, DateTimeInterface $subscribeAt, NormalUser $normalUser, string $status = 'noSent',DateTimeInterface $sentAt = null): Subscribe
     {
         $subscribe = new Subscribe();
         $subscribe->setBook($book);
         $subscribe->setSubscribeAt($subscribeAt);
         $subscribe->setNormalUser($normalUser);
         $subscribe->setStatus($status);
+        $subscribe->setSentAt($sentAt);
         return $subscribe;
     }
 
-    public function createMessage(NormalUser $normalUser, string $content): Message
-    {
-        $message = new Message();
-        $message->setContent($content);
-        $message->setNormalUser($normalUser);
-        return $message;
-    }
 }

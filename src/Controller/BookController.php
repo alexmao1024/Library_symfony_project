@@ -6,13 +6,17 @@ namespace App\Controller;
 use App\Entity\Book;
 use App\Entity\Borrow;
 use App\Entity\NormalUser;
+use App\Event\AfterBookQuantityAddEvent;
 use App\Factory\Factory;
 use App\Repository\BookRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Annotation\Route;
 
 class BookController extends AbstractController
@@ -31,7 +35,7 @@ class BookController extends AbstractController
 
         $resultArray = array();
         foreach ($books as $key => $book) {
-            $resultArray[$key]['id'] = $book->getId();
+            $resultArray[$key]['bookId'] = $book->getId();
             $resultArray[$key]['ISBN'] = $book->getISBN();
             $resultArray[$key]['bookName'] = $book->getBookName();
             $resultArray[$key]['author'] = $book->getAuthor();
@@ -46,7 +50,7 @@ class BookController extends AbstractController
     /**
      * @Route("/createBook", name="create_book",methods={"Post"})
      */
-    public function createBook(Request $request,Factory $factory,EntityManagerInterface $entityManager):Response
+    public function createBook(Request $request,Factory $factory,EntityManagerInterface $entityManager,HubInterface $hub):Response
     {
         $requestArray = $request->toArray();
         $ISBN = $requestArray['ISBN'];
@@ -67,28 +71,60 @@ class BookController extends AbstractController
 
         $entityManager->flush();
 
+        $update = new Update(
+            'https://library.com/books',
+            json_encode([
+                'type'=>'create',
+                'ISBN'=>$ISBN,
+                'author'=>$author,
+                'bookName'=>$bookName,
+                'press'=>$press,
+                'price'=>$price,
+                'quantity'=>$quantity
+            ])
+        );
+
+        $hub->publish($update);
+
         return $this->json([
-            'id'=>$book->getId()
+            'book_id'=>$book->getId()
         ]);
     }
 
     /**
      * @Route("/removeBook/{ISBN}", name="remove_book", methods={"DELETE"})
      */
-    public function removeBook(EntityManagerInterface $entityManager,string $ISBN): Response
+    public function removeBook(EntityManagerInterface $entityManager,string $ISBN,HubInterface $hub): Response
     {
 
         $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN' => $ISBN]);
         if (!$book)
         {
-            throw $this->createNotFoundException(
-                'No book found for: '.$ISBN
-            );
+            throw new \Exception('No book found for: '.$ISBN,404);
         }
+        $borrows = $entityManager->getRepository(Borrow::class)->findBy(['ISBN' => $ISBN]);
+        foreach ( $borrows as $borrow)
+        {
+            if ($borrow->getStatus() == 'borrowed')
+            {
+                throw new \Exception('Can\'t remove.',403);
+            }
+        }
+
 
         $entityManager->remove($book);
 
         $entityManager->flush();
+
+        $update = new Update(
+            'https://library.com/books',
+            json_encode([
+                'type'=>'remove',
+                'ISBN'=>$ISBN
+            ])
+        );
+
+        $hub->publish($update);
 
         return $this->json([],200);
 
@@ -97,7 +133,9 @@ class BookController extends AbstractController
     /**
      * @Route("/updateBook", name="update_book", methods={"POST"})
      */
-    public function updateBook(Request $request,EntityManagerInterface $entityManager,Factory $factory): Response
+    public function updateBook(Request $request,EntityManagerInterface $entityManager,
+                               Factory $factory,HubInterface $hub,
+                               EventDispatcherInterface $eventDispatcher): Response
     {
         $requestArray = $request->toArray();
         $ISBN = $requestArray['ISBN'];
@@ -110,9 +148,7 @@ class BookController extends AbstractController
         $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN'=>$ISBN]);
         if (!$book)
         {
-            throw $this->createNotFoundException(
-                'No book found for: '.$ISBN
-            );
+            throw new \Exception('No book found for: '.$ISBN,404);
         }
 
         $borrows = $entityManager->getRepository(Borrow::class)->findBy(['ISBN' => $ISBN]);
@@ -137,33 +173,32 @@ class BookController extends AbstractController
         {
             $book->setPress($press);
         }
-        if ($quantity)
+
+        $originalQuantity = $book->getQuantity();
+        if (isset($quantity))
         {
-            if ($book->getQuantity()==0 && $book->getSubscribes())
-            {
-                $count = 0;
-                for ($i=0;$i<count($book->getSubscribes(),0);$i++)
-                {
-                    if ($book->getSubscribes()[$i]->getStatus() == 'noSent')
-                    {
-                        $normalUser = $book->getSubscribes()[$i]->getNormalUser();
-                        $message = $factory->createMessage($normalUser, '《'.$book->getSubscribes()[$i]->getBook()->getBookName().'》');
-                        $book->getSubscribes()[$i]->setStatus('sent');
-                        $sentAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
-                        $book->getSubscribes()[$i]->setSentAt($sentAt);
-                        $entityManager->persist($message);
-                        $count ++;
-                    }
-                    if ($count >= $quantity)
-                    {
-                        break;
-                    }
-                }
-            }
             $book->setQuantity($quantity);
         }
 
         $entityManager->flush();
+
+        $event = new AfterBookQuantityAddEvent($book,$originalQuantity);
+        $eventDispatcher->dispatch($event);
+
+        $update = new Update(
+            'https://library.com/books',
+            json_encode([
+                'type'=>'update',
+                'ISBN'=>$book->getISBN(),
+                'author'=>$book->getAuthor(),
+                'bookName'=>$book->getBookName(),
+                'press'=>$book->getPress(),
+                'price'=>$book->getPrice(),
+                'quantity'=>$book->getQuantity()
+            ])
+        );
+
+        $hub->publish($update);
 
         return $this->json([],200);
     }
@@ -176,9 +211,7 @@ class BookController extends AbstractController
 
         $user = $entityManager->getRepository(NormalUser::class)->find($userId);
         if (!$user) {
-            throw $this->createAccessDeniedException(
-                'Access Denied.'
-            );
+            throw new \Exception('Access Denied.',403);
         }
 
         $response = new Response();
@@ -190,38 +223,32 @@ class BookController extends AbstractController
 
         $resultArray = array();
         foreach ($books as $key => $book) {
-            $resultArray[$key]['id'] = $book->getId();
+            $resultArray[$key]['bookId'] = $book->getId();
             $resultArray[$key]['ISBN'] = $book->getISBN();
             $resultArray[$key]['bookName'] = $book->getBookName();
             $resultArray[$key]['author'] = $book->getAuthor();
             $resultArray[$key]['press'] = $book->getPress();
             $resultArray[$key]['price'] = $book->getPrice();
             $resultArray[$key]['quantity'] = $book->getQuantity();
-            $resultArray[$key]['status'] = null;
+            $resultArray[$key]['status'] = '0';
 
-            if (($user->getSubscribe() ? $user->getSubscribe()->getBook() : null) == $book )
+            $boolean = false;
+            if ($user->getSubscribes()[0])
             {
-                $resultArray[$key]['status'] = '已预订';
-            }
-            elseif ($book->getQuantity() == 0)
-            {
-                $borrows = $entityManager->getRepository(Borrow::class)->findBy(['borrower' => $user]);
-                if ($borrows)
+                foreach ($user->getSubscribes() as $subscribe)
                 {
-                    foreach ( $borrows as $borrow )
+                    if ($subscribe->getBook() == $book)
                     {
-                        if ($borrow->getISBN() == $book->getISBN())
-                        {
-                            $resultArray[$key]['status'] = '已借阅';
-                            break;
-                        }
-                        else
-                        {
-                            $resultArray[$key]['status'] = '可预订';
-                        }
+                        $boolean = true;
+                        break;
                     }
                 }
-
+            }
+            if ($boolean)
+            {
+                //设置状态已预定
+                $book->setStatus('1');
+                $resultArray[$key]['status'] = $book->getStatus();
             }
         }
 

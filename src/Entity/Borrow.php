@@ -50,9 +50,10 @@ class Borrow
 
     /**
      * @ORM\ManyToOne(targetEntity=NormalUser::class, inversedBy="borrows")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, onDelete="CASCADE")
      */
     private $borrower;
+
 
     public function getId(): ?int
     {
@@ -143,4 +144,5 @@ class Borrow
 
         return $this;
     }
+
 }

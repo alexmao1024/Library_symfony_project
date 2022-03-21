@@ -29,7 +29,7 @@ class Subscribe
     private $subscribeAt;
 
     /**
-     * @ORM\OneToOne(targetEntity=NormalUser::class, inversedBy="subscribe")
+     * @ORM\ManyToOne(targetEntity=NormalUser::class, inversedBy="subscribes")
      * @ORM\JoinColumn(nullable=false)
      */
     private $normalUser;

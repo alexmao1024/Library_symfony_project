@@ -6,16 +6,19 @@ namespace App\Controller;
 use App\Entity\AdminUser;
 use App\Entity\Book;
 use App\Entity\Borrow;
-use App\Entity\Message;
 use App\Entity\NormalUser;
 use App\Entity\Subscribe;
+use App\Event\AfterBookReturnEvent;
 use App\Factory\Factory;
 use App\Repository\BorrowRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Annotation\Route;
 date_default_timezone_set('Asia/Shanghai');
 
@@ -24,48 +27,65 @@ class BorrowController extends AbstractController
     /**
      * @Route("/borrow", name="borrow", methods={"POST"})
      */
-    public function borrow(Request $request, EntityManagerInterface $entityManager, Factory $factory): Response
+    public function borrow(Request $request, EntityManagerInterface $entityManager, Factory $factory,HubInterface $hub): Response
     {
         $requestArray = $request->toArray();
         $ISBN = $requestArray['ISBN'];
         //用户id
-        $normalUserId = $requestArray['id'];
+        $normalUserId = $requestArray['userId'];
         $borrowAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
 
         //查询用户实体管理器
         $normalUser = $entityManager->getRepository(NormalUser::class)->find($normalUserId);
+        if (!$normalUser){
+            throw new \Exception('No user found for: '.$normalUserId,401);
+        }
 
         //查询书籍实体管理器
         $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN' => $ISBN]);
         if (!$book) {
-            throw $this->createNotFoundException(
-                'No book found : ' . $ISBN
-            );
+            throw new \Exception('No book found for: '.$ISBN,404);
         }
         if ($book->getQuantity() - 1 < 0) {
-            throw $this->createAccessDeniedException(
-                'No book would be borrowed.'
-            );
+            throw new \Exception('No book would be borrowed.',403);
         }
 
-        $subBook = null;
-        if ($normalUser->getSubscribe())
+        $borrows = $entityManager->getRepository(Borrow::class)->findBy(['borrower' => $normalUser, 'status' => 'borrowed']);
+        $borrowCount = 0;
+        if ($borrows)
         {
-            $subBook = $normalUser->getSubscribe()->getBook();
+            $borrowCount = count($borrows,0);
         }
-        //如果该书预定记录数大于等于已有数量且不是预定者则不能外接
+        if ($borrowCount == 3)
+        {
+            throw new \Exception('Can\'t borrowed a book.Because you have been borrowed 3 books',400);
+        }
+
+
+        $userSub = null;
+        $boolean = false;
+        if ($book->getSubscribes()[0])
+        {
+            foreach ( $book->getSubscribes() as $subscribe)
+            {
+                if ($subscribe->getNormalUser() == $normalUser && $subscribe->getStatus() == 'sent')
+                {
+                    $boolean = true;
+                    $userSub = $subscribe;
+                    break;
+                }
+            }
+        }
+
+        //如果该书预定记录数大于等于已有数量且不是预定者或者没有被通知有库存则不能外接
         $bookSubCount = count($book->getSubscribes(), 0);
-        if ($bookSubCount >= $book->getQuantity() && !($subBook == $book))
+        if ($bookSubCount >= $book->getQuantity() && !($boolean))
         {
-            throw $this->createAccessDeniedException(
-                'The book has been subscribed!'
-            );
+            throw new \Exception('Can\'t borrow',405);
         }
-        elseif ($subBook == $book)
-        {           //如果借的书就是该用户自己预定的书，则删除预定记录和消息通知
-            $entityManager->remove($normalUser->getSubscribe());
-            $subContent = $entityManager->getRepository(Message::class)->findOneBy(['normalUser' => $normalUser]);
-            $entityManager->remove($subContent);
+        elseif ($boolean)
+        {           //如果借的书就是该用户自己预定的书，则删除预定记录
+            $entityManager->remove($userSub);
         }
 
         $book->setQuantity($book->getQuantity() - 1);
@@ -76,8 +96,24 @@ class BorrowController extends AbstractController
 
         $entityManager->flush();
 
+        $update = new Update(
+            'https://library.com/books',
+            json_encode([
+                'type'=>'borrow',
+                'ISBN'=>$book->getISBN(),
+                'bookName'=>$book->getBookName(),
+                'borrowId'=>$borrow->getId(),
+                'status'=>$borrow->getStatus(),
+                'borrowAt'=>$borrow->getBorrowAt()->format('Y-m-d H:i:s'),
+                'userId'=>$borrow->getBorrower()->getId(),
+                'quantity'=>$book->getQuantity()
+            ])
+        );
+
+        $hub->publish($update);
+
         return $this->json([
-                'id' => $borrow->getId(),
+                'borrowId' => $borrow->getId(),
                 'bookName' => $borrow->getBookName(),
                 'borrowAt' => $borrow->getBorrowAt()->format('Y-m-d H:i:s'),
                 'status' => $borrow->getStatus(),
@@ -89,38 +125,28 @@ class BorrowController extends AbstractController
     /**
      * @Route("/returnBook", name="return", methods={"POST"})
      */
-    public function returnBook(Request $request,EntityManagerInterface $entityManager,Factory $factory): Response
+    public function returnBook(Request $request,EntityManagerInterface $entityManager,
+                               Factory $factory,HubInterface $hub,
+                               EventDispatcherInterface $eventDispatcher): Response
     {
         $requestArray = $request->toArray();
         //借书记录ID
-        $id = $requestArray['id'];
+        $id = $requestArray['borrowId'];
 
         //查询到该条借书记录
         $borrow = $entityManager->getRepository(Borrow::class)->find($id);
 
         if (!$borrow)
         {
-            throw $this->createNotFoundException(
-                'No borrowing record found for id'.$id
-            );
+            throw new \Exception('No borrow found for: '.$id,404);
         }
-        if ($borrow->getReturnAt())
-        {
-            throw $this->createAccessDeniedException(
-                'The book has already returned.'
-            );
-        }
+
         //查询书籍对象
         $bookISBN = $borrow->getISBN();
         $book = $entityManager->getRepository(Book::class)->findOneBy(['ISBN'=>$bookISBN]);
-        //如果图书记录已被删除则还书时重新插入新数据
-        /*
-        if (!$book)
-        {
-            $book = $factory->createBook($bookISBN,'author',$borrow->getBookName(),'press',0,0);
-        }*/
+
         //查询管理员对象
-        $admin = $entityManager->getRepository(AdminUser::class)->find(1);
+        $admin = $entityManager->getRepository(AdminUser::class)->findOneBy(['username'=>'alex']);
         $spend = 0;
 
         //查询预定信息
@@ -132,15 +158,13 @@ class BorrowController extends AbstractController
 
         //插入还书需要的所有信息
         $borrow->setReturnAt($returnAtDate);
-        $borrow->setStatus('Returned');
+        $borrow->setStatus('returned');
         $book->setQuantity($book->getQuantity()+1);
         //计算还书价格
         $interval = (int)$returnAtDate->diff($borrow->getBorrowAt())->format('%a');
         if ($interval<0)
         {
-            throw $this->createAccessDeniedException(
-                'Return time is fault!'
-            );
+            throw new \Exception('Return time is fault!',400);
         }
         elseif ($interval<=14)
         {
@@ -153,31 +177,33 @@ class BorrowController extends AbstractController
             $admin->setBalance($admin->getBalance()+$spend);
         }
 
-        //如果有预定状态时的操作
-        if ($subscribes)
-        {
-            for ($i=0;$i<count($subscribes,0);$i++)
-            {
-                if ($subscribes[$i]->getStatus() == 'noSent')
-                {
-                    $normalUser = $subscribes[$i]->getNormalUser();
-                    $message = $factory->createMessage($normalUser, '《'.$subscribes[$i]->getBook()->getBookName().'》');
-                    $subscribes[$i]->setStatus('sent');
-                    $sentAt = DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s'));
-                    $subscribes[$i]->setSentAt($sentAt);
-                    $entityManager->persist($message);
-                    break;
-                }
-            }
-
-        }
-
         $entityManager->flush();
+
+        $event = new AfterBookReturnEvent($book);
+        $eventDispatcher->dispatch($event);
+
+        $updateBooks = new Update(
+            'https://library.com/books',
+            json_encode([
+                'type'=>'return',
+                'ISBN'=>$book->getISBN(),
+                'quantity'=>$book->getQuantity(),
+                'returnAt'=>$borrow->getReturnAt()->format('Y-m-d H:i:s'),
+                'userId'=>$borrow->getBorrower()->getId(),
+                'borrowId'=>$borrow->getId(),
+                'spend'=>$borrow->getSpend()
+            ])
+        );
+
+
+
+        $hub->publish($updateBooks);
+
 
         return $this->json(
             [
                 'spend'=>$spend,
-                'balance'=>$admin->getBalance()+$spend
+                'balance'=>$admin->getBalance()
             ]
         );
     }
@@ -197,14 +223,14 @@ class BorrowController extends AbstractController
         $resultArray = array();
         foreach ($borrows as $key => $borrow)
         {
-            $resultArray[$key]['id'] = $borrow->getId();
+            $resultArray[$key]['borrowId'] = $borrow->getId();
             $resultArray[$key]['ISBN'] = $borrow->getISBN();
             $resultArray[$key]['bookName'] = $borrow->getBookName();
             $resultArray[$key]['status'] = $borrow->getStatus();
             $resultArray[$key]['borrowAt'] = $borrow->getBorrowAt()->format('Y-m-d H:i:s');
             $borrow->getReturnAt() ?
-                $resultArray[$key]['returnAt'] = $borrow->getReturnAt()->format('Y-m-d H:i:s')
-                :$resultArray[$key]['returnAt'] = $borrow->getReturnAt();
+                $resultArray[$key]['returnAt'] = $borrow->getReturnAt()->format('Y-m-d H:i:s') :
+                $resultArray[$key]['returnAt'] = $borrow->getReturnAt();
             $resultArray[$key]['spend'] = $borrow->getSpend();
             $resultArray[$key]['borrower'] = $borrow->getBorrower()->getUsername();
         }

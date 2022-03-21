@@ -22,7 +22,7 @@ class AdminUserFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
 
-        $adminUser = $this->factory->createAdmin('694854836@qq.com','alex','alexmao');
+        $adminUser = $this->factory->createAdmin('admin@qq.com','admin','admin');
         $manager->persist($adminUser);
 
         $manager->flush();

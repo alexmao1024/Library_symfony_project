@@ -20,7 +20,7 @@ class NormalUser
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, unique=true)
      */
     private $email;
 
@@ -35,22 +35,18 @@ class NormalUser
     private $password;
 
     /**
-     * @ORM\OneToOne(targetEntity=Subscribe::class, mappedBy="normalUser")
+     * @ORM\OneToMany(targetEntity=Subscribe::class, mappedBy="normalUser",orphanRemoval=true)
      */
-    private $subscribe;
+    private $subscribes;
 
     /**
-     * @ORM\OneToMany(targetEntity=Message::class, mappedBy="normalUser", orphanRemoval=true)
-     */
-    private $messages;
-
-    /**
-     * @ORM\OneToMany(targetEntity=Borrow::class, mappedBy="borrower")
+     * @ORM\OneToMany(targetEntity=Borrow::class, mappedBy="borrower", orphanRemoval=true)
      */
     private $borrows;
 
     public function __construct()
     {
+        $this->subscribes = new ArrayCollection();
         $this->messages = new ArrayCollection();
         $this->borrows = new ArrayCollection();
     }
@@ -96,52 +92,36 @@ class NormalUser
         return $this;
     }
 
-    public function getSubscribe(): ?Subscribe
+    /**
+     * @return Collection|Subscribe[]
+     */
+    public function getSubscribes(): Collection
     {
-        return $this->subscribe;
+        return $this->subscribes;
     }
 
-    public function setSubscribe(Subscribe $subscribe): self
+    public function addSubscribe(Subscribe $subscribe): self
     {
-        // set the owning side of the relation if necessary
-        if ($subscribe->getNormalUser() !== $this) {
+        if (!$this->subscribes->contains($subscribe)) {
+            $this->subscribes[] = $subscribe;
             $subscribe->setNormalUser($this);
         }
 
-        $this->subscribe = $subscribe;
-
         return $this;
     }
 
-    /**
-     * @return Collection|Message[]
-     */
-    public function getMessages(): Collection
+    public function removeSubscribe(Subscribe $subscribe): self
     {
-        return $this->messages;
-    }
-
-    public function addMessage(Message $message): self
-    {
-        if (!$this->messages->contains($message)) {
-            $this->messages[] = $message;
-            $message->setNormalUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeMessage(Message $message): self
-    {
-        if ($this->messages->removeElement($message)) {
+        if ($this->subscribes->removeElement($subscribe)) {
             // set the owning side to null (unless already changed)
-            if ($message->getNormalUser() === $this) {
-                $message->setNormalUser(null);
+            if ($subscribe->getNormalUser() === $this) {
+                $subscribe->setNormalUser(null);
             }
         }
 
         return $this;
     }
+
 
     /**
      * @return Collection|Borrow[]

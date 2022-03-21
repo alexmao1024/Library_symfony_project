@@ -27,13 +27,6 @@ class NormalUserController extends AbstractController
         {
             throw new \Exception('Passed an empty argument.',400);
         }
-        $repeat = $entityManager->getRepository(NormalUser::class)->findRepeat($email);
-        if ($repeat)
-        {
-            throw $this->createAccessDeniedException(
-                'Email is repeated.'
-            );
-        }
 
         $user = $factory->createNormalUser($email,$username,$password);
 
@@ -42,7 +35,7 @@ class NormalUserController extends AbstractController
         $entityManager->flush();
 
         return $this->json([
-            'id'=>$user->getId(),
+            'userId'=>$user->getId(),
             'email'=>$user->getEmail(),
             'username'=>$user->getUsername()
         ]);
@@ -51,15 +44,25 @@ class NormalUserController extends AbstractController
     /**
      * @Route("/removeUser/{id}", name="remove_user", methods={"DELETE"})
      */
-    public function removeUser(EntityManagerInterface $entityManager,string $id): Response
+    public function removeUser(EntityManagerInterface $entityManager,int $id): Response
     {
 
         $user = $entityManager->getRepository(NormalUser::class)->find($id);
         if (!$user)
         {
-            throw $this->createNotFoundException(
-                'No user found for: '.$id
-            );
+            throw new \Exception('No user found for: '.$id,404);
+        }
+        if ($user->getSubscribes()[0])
+        {
+            throw new \Exception('Can\'t remove.Because he subscribed book.',403);
+        }
+        $borrows = $user->getBorrows();
+        foreach ( $borrows as $borrow )
+        {
+            if ($borrow->getStatus() == 'borrowed')
+            {
+                throw new \Exception('Can\'t remove.Because he is borrowing book.',403);
+            }
         }
 
         $entityManager->remove($user);
@@ -79,15 +82,13 @@ class NormalUserController extends AbstractController
         $email = $requestArray['email'];
         $username = $requestArray['username'];
         $password = $requestArray['password'];
-        $id = $requestArray['id'];
+        $id = $requestArray['userId'];
 
 
         $user = $entityManager->getRepository(NormalUser::class)->find($id);
         if (!$user)
         {
-            throw $this->createNotFoundException(
-                'No user found for: '.$id
-            );
+            throw new \Exception('No user found for: '.$id,404);
         }
 
         if ($email)
@@ -100,7 +101,7 @@ class NormalUserController extends AbstractController
         }
         if ($password)
         {
-            $user->setPrice($password);
+            $user->setPassword($password);
         }
 
         $entityManager->flush();
@@ -122,7 +123,7 @@ class NormalUserController extends AbstractController
 
         $resultArray = array();
         foreach ($users as $key => $user) {
-            $resultArray[$key]['id'] = $user->getId();
+            $resultArray[$key]['userId'] = $user->getId();
             $resultArray[$key]['email'] = $user->getEmail();
             $resultArray[$key]['username'] = $user->getUsername();
             $resultArray[$key]['password'] = $user->getPassword();
@@ -139,9 +140,7 @@ class NormalUserController extends AbstractController
         $response = new Response();
         $user = $entityManager->getRepository(NormalUser::class)->find($userId);
         if (!$user) {
-            throw $this->createAccessDeniedException(
-                'Access Denied.'
-            );
+            throw new \Exception('Access Denied.',403);
         }
 
         $borrows = $user->getBorrows();
@@ -152,7 +151,7 @@ class NormalUserController extends AbstractController
 
         $resultArray = array();
         foreach ($borrows as $key => $borrow) {
-            $resultArray[$key]['id'] = $borrow->getId();
+            $resultArray[$key]['borrowId'] = $borrow->getId();
             $resultArray[$key]['ISBN'] = $borrow->getISBN();
             $resultArray[$key]['bookName'] = $borrow->getBookName();
             $resultArray[$key]['status'] = $borrow->getStatus();
